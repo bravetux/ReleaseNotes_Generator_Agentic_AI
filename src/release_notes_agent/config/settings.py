@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     session_backend: str = Field(default="file", alias="SESSION_BACKEND")
     session_dir: str = Field(default=".sessions", alias="SESSION_DIR")
 
+    # Release-notes pipeline
+    output_dir: str = Field(default=".releases", alias="OUTPUT_DIR")
+    max_srs_files: int = Field(default=20, alias="MAX_SRS_FILES")
+    max_srs_chars_per_file: int = Field(default=500_000, alias="MAX_SRS_CHARS_PER_FILE")
+
 
 # Singleton — imported everywhere
 settings = Settings()
