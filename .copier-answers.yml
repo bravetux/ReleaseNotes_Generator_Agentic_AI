@@ -1,0 +1,8 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 700b8d1
+_src_path: https://github.com/bravetux/python_ai_strands_template.git
+github_username: bravetux
+include_docker: true
+package_name: Release Notes Agent
+project_description: A Strands AI agent project
+python_version: '>=3.12'

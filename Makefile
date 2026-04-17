@@ -1,0 +1,45 @@
+.PHONY: *
+
+# ==================================================================
+# careful, lines from here on must be indented with TABS, not SPACES
+build: chmod
+	@./scripts/build.sh
+
+chmod:
+	@chmod +x ./scripts/*.sh
+
+install: sync
+	uv run pre-commit install
+
+lint: chmod
+	@./scripts/lint.sh
+
+init-docs: sync
+	@./scripts/init-docs.sh
+
+github-pages: chmod
+	@./scripts/github-pages.sh
+
+github-tag: chmod
+	@./scripts/github-tag.sh
+
+print-version: chmod
+	@./scripts/print-version.sh
+
+sync: chmod
+	@./scripts/sync.sh
+
+tests: chmod
+	@./scripts/tests.sh
+
+type-check: chmod
+	@./scripts/type-check.sh
+
+run: sync
+	uv run streamlit run app.py
+
+docker-build:
+	docker compose -f docker/docker-compose.yml build
+
+docker-up:
+	docker compose -f docker/docker-compose.yml up

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -ex
+
+echo "--Checking code format--"
+uv run ruff format --check ./src ./tests
+echo "--Linting all sources--"
+uv run ruff check ./src ./tests
