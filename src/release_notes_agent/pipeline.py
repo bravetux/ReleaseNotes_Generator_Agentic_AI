@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from release_notes_agent.agents.release_writer import write_release_notes
@@ -67,6 +68,17 @@ def _variant_path(base: str, suffix: str) -> str:
     return str(p.with_name(f"{p.stem}.{suffix}{p.suffix}"))
 
 
+def _timestamped_path(output_path: str, now: datetime | None = None) -> str:
+    """Rewrite the filename to ``Generated_ReleaseNotes_MMDDYYYY_HHMMSS.<ext>``.
+
+    Keeps the directory and extension from ``output_path`` and replaces the
+    stem with the canonical timestamped name.
+    """
+    p = Path(output_path)
+    stamp = (now or datetime.now()).strftime("%m%d%Y_%H%M%S")
+    return str(p.with_name(f"Generated_ReleaseNotes_{stamp}{p.suffix}"))
+
+
 def generate_release_notes(req: GenerateRequest) -> GenerationResult:
     """Run the full pipeline deterministically and return a GenerationResult."""
     loaded = load_srs.__wrapped__(paths=req.srs_paths)
@@ -111,21 +123,22 @@ def generate_release_notes(req: GenerateRequest) -> GenerationResult:
     traceability = _build_traceability(merged)
     output_paths: list[str] = []
 
+    # Both variants share a single timestamp so they group in listings.
+    base_out = _timestamped_path(req.output_path)
+
     if internal_md is not None:
         body = internal_md + _traceability_markdown(traceability)
         path = export_release_notes.__wrapped__(
             markdown_text=body,
             fmt=req.output_format,
-            output_path=req.output_path,
+            output_path=base_out,
             metadata=metadata.model_dump(mode="json"),
         )
         output_paths.append(path)
 
     if external_md is not None:
         ext_out = (
-            _variant_path(req.output_path, "external")
-            if internal_md is not None
-            else req.output_path
+            _variant_path(base_out, "external") if internal_md is not None else base_out
         )
         path = export_release_notes.__wrapped__(
             markdown_text=external_md,

@@ -1,11 +1,11 @@
 """End-to-end pipeline test with sub-agents mocked."""
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
 from release_notes_agent.models.schemas import GenerateRequest, SrsItem
-from release_notes_agent.pipeline import generate_release_notes
+from release_notes_agent.pipeline import _timestamped_path, generate_release_notes
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -56,8 +56,10 @@ class TestGenerateReleaseNotes:
         assert result.internal_markdown is not None
         assert result.external_markdown is not None
         assert len(result.output_paths) == 2
-        assert (tmp_path / "out.md").exists()
-        assert (tmp_path / "out.external.md").exists()
+        internal_files = list(tmp_path.glob("Generated_ReleaseNotes_*.md"))
+        external_files = list(tmp_path.glob("Generated_ReleaseNotes_*.external.md"))
+        assert len(internal_files) == 2  # glob matches both internal and external
+        assert len(external_files) == 1
 
     def test_internal_only_writes_one_file_with_traceability(self, tmp_path):
         req = GenerateRequest(
@@ -83,7 +85,11 @@ class TestGenerateReleaseNotes:
             result = generate_release_notes(req)
         assert result.external_markdown is None
         assert len(result.output_paths) == 1
-        content = (tmp_path / "out.md").read_text(encoding="utf-8")
+        written = Path(result.output_paths[0])
+        assert written.parent == tmp_path
+        assert written.name.startswith("Generated_ReleaseNotes_")
+        assert written.suffix == ".md"
+        content = written.read_text(encoding="utf-8")
         assert "Traceability" in content
         assert "BUG-101" in content
 
@@ -108,6 +114,22 @@ class TestGenerateReleaseNotes:
                 side_effect=_mock_write,
             ),
         ):
-            generate_release_notes(req)
-        content = (tmp_path / "out.md").read_text(encoding="utf-8")
+            result = generate_release_notes(req)
+        written = Path(result.output_paths[0])
+        assert written.name.startswith("Generated_ReleaseNotes_")
+        content = written.read_text(encoding="utf-8")
         assert "Traceability" not in content
+
+
+class TestTimestampedPath:
+    def test_replaces_stem_and_keeps_dir_and_ext(self):
+        now = datetime(2026, 4, 17, 15, 30, 45)
+        result = _timestamped_path("/tmp/release/notes.docx", now=now)
+        assert result == str(
+            Path("/tmp/release/Generated_ReleaseNotes_04172026_153045.docx")
+        )
+
+    def test_zero_pads_single_digit_components(self):
+        now = datetime(2026, 1, 2, 3, 4, 5)
+        result = _timestamped_path("out.md", now=now)
+        assert Path(result).name == "Generated_ReleaseNotes_01022026_030405.md"
