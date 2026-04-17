@@ -1,0 +1,4 @@
+SRS - Demo Product v1.2.0
+
+BUG-201: Timeout on first login after idle.
+FR-30: Keyboard shortcut Ctrl+K opens global search.
