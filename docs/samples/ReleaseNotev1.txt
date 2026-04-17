@@ -1,0 +1,114 @@
+================================================================================
+  release-notes-agent — v1.0.0 Release Notes
+  Release date: 2026-04-17
+  Audience: External
+================================================================================
+
+Overview
+--------
+release-notes-agent v1.0 is the first production release of our Strands-based
+assistant for turning raw SRS documents into polished, dual-audience release
+notes. This release establishes the deterministic pipeline, the chat surface,
+and exports to every format our customers have asked for.
+
+
+New Features
+------------
+- Multi-format SRS ingestion. Load Bug IDs, descriptions, and Functional
+  Requirements from PDF, DOCX, TXT, or Markdown files. Pass one file or a
+  whole folder; the agent de-duplicates on Bug ID automatically.
+
+- Sample-driven style matching. Point the agent at an existing release-notes
+  document and it will mirror the headings, list style, and section order
+  of that exemplar in its output.
+
+- Dual-audience output. Choose Internal, External, or Both. The internal
+  variant preserves Bug IDs and includes a traceability matrix that maps
+  every release-notes line back to its source SRS; the external variant
+  strips IDs and speaks in user-benefit language.
+
+- Four export formats in one run. Markdown, HTML, DOCX, and PDF are all
+  produced from the same canonical Markdown source, so headings, lists, and
+  tables look identical across formats.
+
+- Two entry points, one pipeline. The Streamlit UI and the typer CLI share
+  the exact same deterministic pipeline — no behavioural drift between UI
+  and automation.
+
+- Interactive chat mode. Drive the full pipeline by natural language
+  ("Load these SRS files, make external notes, export to DOCX"). The
+  orchestrator persists conversations per-session so long workflows
+  survive browser reloads.
+
+
+Improvements
+------------
+- Session-scoped Streamlit state. Every browser tab gets a unique session
+  so parallel users can drive independent pipelines without clobbering
+  each other's work.
+
+- Audit logging on every tool call. Each tool invocation emits
+  TOOL_CALL_START and TOOL_CALL_END log lines with the tool name, making
+  it straightforward to trace what the agent actually did on a given run.
+
+- Graceful PDF-export fallback on Windows. If WeasyPrint/GTK is not
+  installed, the other three export formats still succeed; the PDF path
+  is skipped with a clear message instead of crashing the run.
+
+
+Bug Fixes
+---------
+- Fixed an issue where chat sessions persisted in a directory that was
+  not created on first run, causing a silent failure on the first
+  message. The session directory is now created on demand.
+
+- Fixed the CLI rejecting the `--date` option on systems where typer
+  did not support `datetime.date` directly. Dates are now parsed from
+  ISO-8601 strings.
+
+- Fixed a crash on unreadable SRS files: a single bad file no longer
+  aborts the whole pipeline. The loader now emits a structured error
+  entry for that file and continues.
+
+
+Breaking Changes
+----------------
+- The CLI now uses subcommands: `main.py generate ...` and `main.py chat`
+  replace the previous single-query invocation. Update any scripts that
+  call `main.py <query>` directly.
+
+- `run_parallel_agents()` has been removed from the orchestrator module.
+  The new deterministic pipeline in `release_notes_agent.pipeline` is the
+  supported entry point for programmatic use.
+
+
+Known Issues
+------------
+- PDF export on Windows requires GTK to be installed separately. Markdown,
+  HTML, and DOCX all work without GTK. See the README for the setup link.
+
+- Very large SRS documents (> 500,000 characters per file) are truncated
+  to stay within the model's context window. Split oversized files before
+  ingestion to avoid information loss.
+
+- On very fast consecutive runs that target the same output path, the
+  DOCX exporter can raise a file-lock error on Windows. Workaround: use
+  a unique `--out` path per run.
+
+
+Upgrade Notes
+-------------
+1. Update your `.env` with the new variables `OUTPUT_DIR`, `MAX_SRS_FILES`,
+   and `MAX_SRS_CHARS_PER_FILE`. See `.env.example` for defaults.
+2. Run `make install` to pick up the new dependencies (pypdf, python-docx,
+   htmldocx, weasyprint, markdown, jinja2, typer).
+3. If you were scripting against `run_parallel_agents`, migrate to
+   `generate_release_notes(GenerateRequest(...))`.
+
+
+Thanks
+------
+Thanks to the early-access users who ran hundreds of SRS documents through
+the pipeline and filed the feedback that shaped this release.
+
+-- The release-notes-agent team
