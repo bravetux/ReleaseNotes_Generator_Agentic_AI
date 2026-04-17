@@ -6,28 +6,28 @@ from release_notes_agent.config.settings import settings
 
 
 def render_sidebar() -> None:
-    """Render the sidebar with project info and settings."""
+    """Render a minimal sidebar: environment status + actions."""
     with st.sidebar:
         st.title("release-notes-agent")
-        st.markdown("---")
+        st.caption("Strands Agents + AWS Bedrock")
 
-        st.subheader("Settings")
-        st.text_input("Model", value=settings.bedrock_model_id, disabled=True)
-        st.slider(
-            "Temperature",
-            min_value=0.0,
-            max_value=1.0,
-            value=settings.agent_temperature,
-            disabled=True,
-        )
-        st.number_input(
-            "Max Tokens",
-            value=settings.agent_max_tokens,
-            disabled=True,
-        )
+        st.divider()
 
-        st.markdown("---")
-        if st.button("Clear Chat", use_container_width=True):
+        st.markdown("**Environment**")
+        creds_ok = bool(settings.aws_access_key_id)
+        status_icon = "🟢" if creds_ok else "🔴"
+        status_text = "credentials present" if creds_ok else "credentials missing"
+        st.markdown(f"{status_icon} {status_text}")
+        st.markdown(f"**Region:** `{settings.aws_region}`")
+        st.markdown(f"**Model:** `{settings.bedrock_model_id}`")
+
+        st.divider()
+
+        session_id = st.session_state.get("session_id")
+        if session_id:
+            st.caption(f"Session: `{session_id[:8]}…`")
+
+        if st.button("Clear chat", use_container_width=True):
             st.session_state.messages = []
             st.session_state.pop("session_id", None)
             st.rerun()
