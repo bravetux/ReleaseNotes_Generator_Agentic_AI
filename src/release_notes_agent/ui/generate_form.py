@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import streamlit as st
 
@@ -13,7 +14,7 @@ from release_notes_agent.models.schemas import GenerateRequest
 from release_notes_agent.pipeline import generate_release_notes
 
 
-def _save_upload(uploaded, dest_dir: Path) -> str:
+def _save_upload(uploaded: Any, dest_dir: Path) -> str:  # noqa: ANN401
     dest_dir.mkdir(parents=True, exist_ok=True)
     path = dest_dir / uploaded.name
     path.write_bytes(uploaded.getbuffer())

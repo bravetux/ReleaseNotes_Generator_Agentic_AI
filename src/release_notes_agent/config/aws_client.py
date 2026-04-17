@@ -1,5 +1,7 @@
 """AWS client factory functions for Bedrock and other AWS services."""
 
+from typing import Any
+
 import boto3
 
 from release_notes_agent.config.settings import settings
@@ -19,7 +21,7 @@ def get_bedrock_session() -> boto3.Session:
     return boto3.Session(**kwargs)
 
 
-def get_aws_client(service: str):
+def get_aws_client(service: str) -> Any:  # noqa: ANN401
     """Return a boto3 client for the given AWS service.
 
     All tools should use this factory — never call boto3.client() directly.

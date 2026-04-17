@@ -2,6 +2,7 @@
 
 import logging
 import pathlib
+from typing import Any
 
 from strands import Agent
 from strands.agent.conversation_manager import SummarizingConversationManager
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_SESSION_ID = "orchestrator-default"
 
 
-def get_session_manager(session_id: str = _DEFAULT_SESSION_ID):
+def get_session_manager(session_id: str = _DEFAULT_SESSION_ID) -> Any:  # noqa: ANN401
     """Return the appropriate session manager based on SESSION_BACKEND env var."""
     try:
         from strands.session.file_session_manager import FileSessionManager

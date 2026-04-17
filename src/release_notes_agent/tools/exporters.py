@@ -1,6 +1,7 @@
 """Release-notes exporter: md -> html -> {md, html, docx, pdf}."""
 
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 
@@ -24,7 +25,7 @@ def _render_html(markdown_text: str, metadata: ReleaseMetadata) -> str:
     return template.render(metadata=metadata, body_html=body_html, css=css)
 
 
-def _write_atomic(path: Path, writer) -> None:
+def _write_atomic(path: Path, writer: Callable[[Path], None]) -> None:
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, suffix=path.suffix)
     import os
 
