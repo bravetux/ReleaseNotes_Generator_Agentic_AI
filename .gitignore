@@ -81,6 +81,9 @@ data/
 # mkdocs
 site/
 
+# scaffolding template
+python_ai_strands_template/
+
 # mypy
 .mypy_cache/
 .dmypy.json
