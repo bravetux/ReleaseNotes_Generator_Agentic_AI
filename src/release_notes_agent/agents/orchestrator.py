@@ -1,6 +1,5 @@
-"""Orchestrator agent — routes queries to specialist sub-agents and aggregates results."""
+"""Orchestrator agent — drives the chat surface with release-notes tools."""
 
-import concurrent.futures
 import logging
 import pathlib
 
@@ -10,11 +9,13 @@ from strands.hooks import AfterToolCallEvent, BeforeToolCallEvent
 from strands.models import BedrockModel
 from strands_tools.think import think
 
-from release_notes_agent.agents.example_agent import create_example_agent
 from release_notes_agent.config.aws_client import get_bedrock_session
 from release_notes_agent.config.prompts import ORCHESTRATOR_SYSTEM_PROMPT
 from release_notes_agent.config.settings import settings
-from release_notes_agent.tools.example_tools import add_numbers, greet
+from release_notes_agent.tools.exporters import export_release_notes
+from release_notes_agent.tools.item_ops import merge_srs_items
+from release_notes_agent.tools.srs_loaders import load_srs
+from release_notes_agent.tools.style_loader import load_sample_style
 
 logger = logging.getLogger(__name__)
 
@@ -35,29 +36,6 @@ def get_session_manager(session_id: str = _DEFAULT_SESSION_ID):
             "FileSessionManager not available (%s), using no session manager", e
         )
         return None
-
-
-def run_parallel_agents(query: str) -> dict:
-    """Run specialist sub-agents in parallel threads.
-
-    Returns a dict keyed by agent name with each agent's response string.
-    Add more sub-agents here as the project grows.
-    """
-    example_agent = create_example_agent()
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {
-            "example": executor.submit(example_agent, query),
-        }
-        results = {}
-        for key, future in futures.items():
-            try:
-                results[key] = str(future.result(timeout=120))
-            except Exception as e:
-                logger.error("Sub-agent %s failed: %s", key, e)
-                results[key] = f"Error: {e}"
-
-    return results
 
 
 def create_orchestrator(session_id: str | None = None) -> Agent:
@@ -85,9 +63,10 @@ def create_orchestrator(session_id: str | None = None) -> Agent:
 
     tools = [
         think,
-        # Add your tools here
-        greet,
-        add_numbers,
+        load_srs,
+        load_sample_style,
+        merge_srs_items,
+        export_release_notes,
     ]
 
     agent_kwargs: dict = {
